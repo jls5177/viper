@@ -24,6 +24,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/jinzhu/copier"
 	"io"
 	"log"
 	"os"
@@ -33,14 +34,14 @@ import (
 	"sync"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
-	toml "github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
@@ -1846,4 +1847,51 @@ func (v *Viper) Debug() {
 	fmt.Printf("Key/Value Store:\n%#v\n", v.kvstore)
 	fmt.Printf("Config:\n%#v\n", v.config)
 	fmt.Printf("Defaults:\n%#v\n", v.defaults)
+}
+
+func CopyMap(m map[string]interface{}) map[string]interface{} {
+	cp := make(map[string]interface{})
+	for k, v := range m {
+		vm, ok := v.(map[string]interface{})
+		if ok {
+			cp[k] = CopyMap(vm)
+		} else {
+			cp[k] = v
+		}
+	}
+
+	return cp
+}
+
+func Clone() { v.Clone() }
+func (v *Viper) Clone() *Viper {
+	newViper := *New()
+	newViper = *v
+
+	newViper.config = CopyMap(newViper.config)
+	newViper.override = CopyMap(newViper.override)
+	newViper.defaults = CopyMap(newViper.defaults)
+	newViper.kvstore = CopyMap(newViper.kvstore)
+
+	newViper.pflags = make(map[string]FlagValue)
+	for k, v := range v.pflags {
+		newViper.pflags[k] = v
+	}
+
+	newViper.env = make(map[string]string)
+	for k, v := range v.env {
+		newViper.env[k] = v
+	}
+
+	newViper.aliases = make(map[string]string)
+	for k, v := range v.aliases {
+		newViper.aliases[k] = v
+	}
+
+	if v.properties != nil {
+		newViper.properties = properties.NewProperties()
+		copier.Copy(newViper.properties, v.properties)
+	}
+
+	return &newViper
 }

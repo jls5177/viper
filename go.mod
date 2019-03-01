@@ -7,6 +7,7 @@ require (
 	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/hashicorp/hcl v1.0.0
+	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3
 	github.com/magiconair/properties v1.8.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pelletier/go-toml v1.2.0

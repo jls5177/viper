@@ -107,6 +107,14 @@ p_ppu: 0.55
 p_batters.batter.type: Regular
 `)
 
+var propertiesExample2 = []byte(`
+p_id: 0002
+p_type: peanut
+p_name: Rake
+p_ppu: 0.66
+p_batters.batter.type: Regular
+`)
+
 var remoteExample = []byte(`{
 "id":"0002",
 "type":"cronut",
@@ -1271,6 +1279,81 @@ func TestMergeConfigMap(t *testing.T) {
 	assert(1234)
 
 }
+
+func TestClone(t *testing.T) {
+	v := New()
+	v.SetConfigType("yml")
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	validateValues := func() {
+		if pop := v.GetInt("hello.pop"); pop != 37890 {
+			t.Fatalf("pop != 37890, = %d", pop)
+		}
+
+		if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
+			t.Fatalf("pop != 37890, = %d", pop)
+		}
+
+		if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
+			t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
+		}
+
+		if world := v.GetStringSlice("hello.world"); len(world) != 4 {
+			t.Fatalf("len(world) != 4, = %d", len(world))
+		}
+
+		if fu := v.GetString("fu"); fu != "" {
+			t.Fatalf("fu != \"\", = %s", fu)
+		}
+	}
+
+	validateValues()
+
+	// Set a default value to ensure they get copied over correctly
+	v.SetDefault("newFu", "kung")
+
+	newV := v.Clone()
+
+	newV.SetDefault("newFu", "not kung")
+
+	if err := newV.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
+		t.Fatal(err)
+	}
+
+	validateValues()
+
+	// Verify Default Values work properly
+	if fu := v.GetString("newFu"); fu != "kung" {
+		t.Fatalf("fu != \"kung\", = %s", fu)
+	}
+	if fu := newV.GetString("newFu"); fu != "not kung" {
+		t.Fatalf("fu != \"kung\", = %s", fu)
+	}
+}
+
+
+func TestCloneProps(t *testing.T) {
+	v := New()
+
+	v.SetConfigType("properties")
+	r := bytes.NewReader(propertiesExample)
+	v.ReadConfig(r)
+
+	assert.Equal(t, "0001", v.Get("p_id"))
+
+	newV := v.Clone()
+
+	r = bytes.NewReader(propertiesExample2)
+	newV.ReadConfig(r)
+
+	newV.Set("p_id", "0002")
+	assert.Equal(t, "0001", v.Get("p_id"))
+	assert.Equal(t, "0002", newV.Get("p_id"))
+}
+
+
 
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
