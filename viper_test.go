@@ -1272,6 +1272,59 @@ func TestMergeConfigMap(t *testing.T) {
 
 }
 
+func TestClone(t *testing.T) {
+	v := New()
+	v.SetConfigType("yml")
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	validateValues := func() {
+		if pop := v.GetInt("hello.pop"); pop != 37890 {
+			t.Fatalf("pop != 37890, = %d", pop)
+		}
+
+		if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
+			t.Fatalf("pop != 37890, = %d", pop)
+		}
+
+		if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
+			t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
+		}
+
+		if world := v.GetStringSlice("hello.world"); len(world) != 4 {
+			t.Fatalf("len(world) != 4, = %d", len(world))
+		}
+
+		if fu := v.GetString("fu"); fu != "" {
+			t.Fatalf("fu != \"\", = %s", fu)
+		}
+	}
+
+	validateValues()
+
+	// Set a default value to ensure they get copied over correctly
+	v.SetDefault("newFu", "kung")
+
+	newV := v.Clone()
+
+	newV.SetDefault("newFu", "not kung")
+
+	if err := newV.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
+		t.Fatal(err)
+	}
+
+	validateValues()
+
+	// Verify Default Values work properly
+	if fu := v.GetString("newFu"); fu != "kung" {
+		t.Fatalf("fu != \"kung\", = %s", fu)
+	}
+	if fu := newV.GetString("newFu"); fu != "not kung" {
+		t.Fatalf("fu != \"kung\", = %s", fu)
+	}
+}
+
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)

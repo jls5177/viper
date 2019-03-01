@@ -33,14 +33,14 @@ import (
 	"sync"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
-	toml "github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
@@ -1846,4 +1846,12 @@ func (v *Viper) Debug() {
 	fmt.Printf("Key/Value Store:\n%#v\n", v.kvstore)
 	fmt.Printf("Config:\n%#v\n", v.config)
 	fmt.Printf("Defaults:\n%#v\n", v.defaults)
+}
+
+func Clone() { v.Clone() }
+func (v *Viper) Clone() *Viper {
+	newViper := New()
+	byt, _ := json.Marshal(v)
+	json.Unmarshal(byt, newViper)
+	return newViper
 }
